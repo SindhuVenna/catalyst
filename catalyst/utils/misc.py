@@ -1,4 +1,4 @@
-from typing import Any, Iterable  # isort:skip
+from typing import Any, Iterable, Optional, Dict  # isort:skip
 
 import collections
 import copy
@@ -33,6 +33,12 @@ def pairwise(iterable: Iterable[Any]) -> Iterable[Any]:
 
 
 def make_tuple(tuple_like):
+    """
+    Creates a tuple if given ``tuple_like`` value isn't list or tuple
+
+    Returns:
+        tuple or list
+    """
     tuple_like = (
         tuple_like if isinstance(tuple_like, (list, tuple)) else
         (tuple_like, tuple_like)
@@ -80,24 +86,51 @@ def append_dict(dict1, dict2):
     return dict1
 
 
-def flatten_dict(d, parent_key="", sep="/"):
+def flatten_dict(
+    dictionary: Dict[str, Any],
+    parent_key: str = "",
+    separator: str = "/"
+) -> "collections.OrderedDict":
+    """
+    Make the given dictionary flatten
+
+    Args:
+        dictionary (dict): giving dictionary
+        parent_key (str, optional): string value in the top of new keys
+        separator (str, optional): string thats separates keys for new keys
+
+    Returns:
+        collections.OrderedDict: ordered dictionary with flatten keys
+    """
     items = []
-    for k, v in d.items():
-        new_key = parent_key + sep + k if parent_key else k
-        if isinstance(v, collections.MutableMapping):
-            items.extend(flatten_dict(v, new_key, sep=sep).items())
+    for key, value in dictionary.items():
+        new_key = parent_key + separator + key if parent_key else key
+        if isinstance(value, collections.MutableMapping):
+            items.extend(
+                flatten_dict(value, new_key, separator=separator).items()
+            )
         else:
-            items.append((new_key, v))
+            items.append((new_key, value))
     return collections.OrderedDict(items)
 
 
 def maybe_recursive_call(
     object_or_dict,
-    method,
+    method: str,
     recursive_args=None,
     recursive_kwargs=None,
     **kwargs
 ):
+    """
+    Calls the ``method`` recursively for the object_or_dict
+
+    Args:
+        object_or_dict (Any): some object or a dictinary of objects
+        method (str): method name to call
+        recursive_args: list of arguments to pass to the ``method``
+        recursive_kwargs: list of key-arguments to pass to the ``method``
+        **kwargs: Arbitrary keyword arguments
+    """
     if isinstance(object_or_dict, dict):
         result = type(object_or_dict)()
         for k, v in object_or_dict.items():
@@ -160,3 +193,21 @@ def get_utcnow_time(format: str = None) -> str:
         format = "%y%m%d.%H%M%S"
     result = datetime.utcnow().strftime(format)
     return result
+
+
+def args_are_not_none(*args: Optional[Any]) -> bool:
+    """
+    Check that all arguments are not None
+    Args:
+        *args (Any): values
+    Returns:
+         bool: True if all value were not None, False otherwise
+    """
+    if args is None:
+        return False
+
+    for arg in args:
+        if arg is None:
+            return False
+
+    return True
